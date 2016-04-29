@@ -8,8 +8,9 @@ import models.investor as investor
 # m = Match('2016-ausopen-1701',2014,'usopen',1402,'','')
 #
 # print m
-Player.start_year = 2011
+Player.start_year = 2012
 Player.end_year = 2015
+Player.surface = 'hard'
 
 matches = []
 
@@ -23,7 +24,7 @@ ps = []
 pss = []
 
 for match in matches:
-    prediction = Prediction(match[0],match[1],'set_iid_model',match)
+    prediction = Prediction(match[0],match[1],'game_iid_model',match,bo=5)
     prediction.predict_set_score()
     ps.append(prediction)
     pss.append(prediction.to_list())
@@ -40,13 +41,14 @@ for match in matches:
     # ps.append(p)
 
 
-print tabulate.tabulate(pss, headers=['P1','P2','Score','W','Wp','P2p','P2p','3:0p','3:1p','3:2p','0:3p','1:3p','2:3p','p1o','p2o','3:0o','3:1o','3:2o','0:3o','1:3o','2:3o'])
+print tabulate.tabulate(pss, headers=['P1','P2','Score','W','Wp','P2p','P2p','2:0p','2:1p','0:2p','1:2p','p1o','p2o','2:0o','2:1o','0:2o','1:2o'])
 print investor.winner_only_re(ps)
 print investor.winner_hedge_re(ps)
 print investor.set_winner_only_re(ps)
-
-for player in Player.cached_players:
-    print player+' '+str(Player.cached_players[player].match_baseline.serv_mean)+','+str(Player.cached_players[player].match_baseline.serv_std)+','+str(Player.cached_players[player].match_baseline.retn_mean)+','+str(Player.cached_players[player].match_baseline.retn_std)
+print investor.winner_only_br(ps)
+#
+# for player in Player.cached_players:
+#     print player+' '+str(Player.cached_players[player].match_baseline.serv_mean)+','+str(Player.cached_players[player].match_baseline.serv_std)+','+str(Player.cached_players[player].match_baseline.retn_mean)+','+str(Player.cached_players[player].match_baseline.retn_std)
 # p = Player('Andy Murray')
 # p = Player('Roger Federer')
 #

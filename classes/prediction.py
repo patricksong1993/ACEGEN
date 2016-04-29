@@ -1,11 +1,13 @@
 import classes.player as player
 import math as math
 import numpy as np
-import models.set_iid_model as sim
+from models.game_iid_model import GameIIDModel
+from models.set_iid_model import SetIIDModel
+from models.match_iid_model import MatchIIDModel
 
 class Prediction:
 
-    def __init__(self, p1_name, p2_name, model, data=''):
+    def __init__(self, p1_name, p2_name, model, data='', bo=5):
         self.p1 = player.Player.get_player(p1_name)
         if self.p1.match_impact == 0:
             self.p1.calculate_impact()
@@ -13,15 +15,22 @@ class Prediction:
         if self.p2.match_impact == 0:
             self.p2.calculate_impact()
 
+
+        self.bo = bo
+
         self.match_exp = 0
         self.set_exp = {}
         self.game_exp = {}
         self.point_exp = {}
 
-        self.calculate_exp(self.p1, self.p2)
+        self.calculate_exp(self.p1, self.p2, self.bo)
 
         if model == 'set_iid_model':
-            self.model = sim.SetIIDModel(self.match_exp, self.set_exp, self.game_exp, self.point_exp)
+            self.model = SetIIDModel(self.match_exp, self.set_exp, self.game_exp, self.point_exp, bo=self.bo)
+        elif model == 'game_iid_model':
+            self.model = GameIIDModel(self.match_exp, self.set_exp, self.game_exp, self.point_exp, bo=self.bo)
+        elif model == 'match_iid_model':
+            self.model = MatchIIDModel(self.match_exp, self.set_exp, self.game_exp, self.point_exp, bo=self.bo)
 
         self.match_score_prob = {}
         self.match_winner_prob = {}
@@ -30,65 +39,120 @@ class Prediction:
         self.match_score_odds = {}
 
         if data != '':
-            self.match_score = data[3]
-            if self.match_score[0] > self.match_score[2]:
-                self.match_winner = 'p1'
-            else:
-                self.match_winner = 'p2'
+            if self.bo == 5:
+                self.match_score = data[3]
+                if self.match_score[0] > self.match_score[2]:
+                    self.match_winner = 'p1'
+                else:
+                    self.match_winner = 'p2'
 
-            self.match_winner_odds['p1'] = float(data[4])
-            self.match_winner_odds['p2'] = float(data[5])
+                self.match_winner_odds['p1'] = float(data[4])
+                self.match_winner_odds['p2'] = float(data[5])
 
-            self.match_score_odds['3:0'] = float(data[6])
-            self.match_score_odds['3:1'] = float(data[7])
-            self.match_score_odds['3:2'] = float(data[8])
-            self.match_score_odds['0:3'] = float(data[9])
-            self.match_score_odds['1:3'] = float(data[10])
-            self.match_score_odds['2:3'] = float(data[11])
+                self.match_score_odds['3:0'] = float(data[6])
+                self.match_score_odds['3:1'] = float(data[7])
+                self.match_score_odds['3:2'] = float(data[8])
+                self.match_score_odds['0:3'] = float(data[9])
+                self.match_score_odds['1:3'] = float(data[10])
+                self.match_score_odds['2:3'] = float(data[11])
 
-            self.round = int(data[2])
+                self.round = int(data[2])
+            elif self.bo == 3:
+                self.match_score = data[3]
+                if self.match_score[0] > self.match_score[2]:
+                    self.match_winner = 'p1'
+                else:
+                    self.match_winner = 'p2'
+
+                self.match_winner_odds['p1'] = float(data[4])
+                self.match_winner_odds['p2'] = float(data[5])
+
+                self.match_score_odds['2:0'] = float(data[6])
+                self.match_score_odds['2:1'] = float(data[7])
+                self.match_score_odds['0:2'] = float(data[8])
+                self.match_score_odds['1:2'] = float(data[9])
+
+                self.round = int(data[2])
 
     def to_list(self):
         all_attr = []
         all_attr.extend([self.p1.name, self.p2.name, self.match_score, self.match_winner])
         all_attr.append('p1' if self.match_winner_prob['p1']>0.5 else 'p2')
         all_attr.extend([self.match_winner_prob['p1'], self.match_winner_prob['p2']])
-        all_attr.extend([self.match_score_prob['3:0'], self.match_score_prob['3:1'], self.match_score_prob['3:2'],
-                         self.match_score_prob['0:3'], self.match_score_prob['1:3'], self.match_score_prob['2:3']])
+
+        if self.bo == 5:
+            all_attr.extend([self.match_score_prob['3:0'], self.match_score_prob['3:1'], self.match_score_prob['3:2'],
+                            self.match_score_prob['0:3'], self.match_score_prob['1:3'], self.match_score_prob['2:3']])
+        elif self.bo == 3:
+            all_attr.extend([self.match_score_prob['2:0'], self.match_score_prob['2:1'],
+                             self.match_score_prob['0:2'], self.match_score_prob['1:2']])
+
         all_attr.extend([self.match_winner_odds['p1'], self.match_winner_odds['p2']])
-        all_attr.extend([self.match_score_odds['3:0'], self.match_score_odds['3:1'], self.match_score_odds['3:2'],
-                         self.match_score_odds['0:3'], self.match_score_odds['1:3'], self.match_score_odds['2:3']])
+        if self.bo == 5:
+            all_attr.extend([self.match_score_odds['3:0'], self.match_score_odds['3:1'], self.match_score_odds['3:2'],
+                            self.match_score_odds['0:3'], self.match_score_odds['1:3'], self.match_score_odds['2:3']])
+        elif self.bo == 3:
+            all_attr.extend([self.match_score_odds['2:0'], self.match_score_odds['2:1'],
+                             self.match_score_odds['0:2'], self.match_score_odds['1:2']])
+
         return all_attr
 
     def predict_set_score(self):
         match_matrix = self.model.match_matrix()
-        self.match_score_prob['3:0'] = np.sum(match_matrix[3][0])
-        self.match_score_prob['3:1'] = np.sum(match_matrix[3][1])
-        self.match_score_prob['3:2'] = np.sum(match_matrix[3][2])
-        self.match_score_prob['0:3'] = np.sum(match_matrix[0][3])
-        self.match_score_prob['1:3'] = np.sum(match_matrix[1][3])
-        self.match_score_prob['2:3'] = np.sum(match_matrix[2][3])
 
-        self.match_winner_prob['p1'] = self.match_score_prob['3:0'] + self.match_score_prob['3:1'] + self.match_score_prob['3:2']
-        self.match_winner_prob['p2'] = self.match_score_prob['0:3'] + self.match_score_prob['1:3'] + self.match_score_prob['2:3']
+        if self.bo == 5:
+            self.match_score_prob['3:0'] = np.sum(match_matrix[3][0])
+            self.match_score_prob['3:1'] = np.sum(match_matrix[3][1])
+            self.match_score_prob['3:2'] = np.sum(match_matrix[3][2])
+            self.match_score_prob['0:3'] = np.sum(match_matrix[0][3])
+            self.match_score_prob['1:3'] = np.sum(match_matrix[1][3])
+            self.match_score_prob['2:3'] = np.sum(match_matrix[2][3])
 
-    def calculate_exp(self, p1, p2):
+            self.match_winner_prob['p1'] = self.match_score_prob['3:0'] + self.match_score_prob['3:1'] + self.match_score_prob['3:2']
+            self.match_winner_prob['p2'] = self.match_score_prob['0:3'] + self.match_score_prob['1:3'] + self.match_score_prob['2:3']
+
+        elif self.bo == 3:
+            self.match_score_prob['2:0'] = np.sum(match_matrix[2][0])
+            self.match_score_prob['2:1'] = np.sum(match_matrix[2][1])
+            self.match_score_prob['0:2'] = np.sum(match_matrix[0][2])
+            self.match_score_prob['1:2'] = np.sum(match_matrix[1][2])
+
+            self.match_winner_prob['p1'] = self.match_score_prob['2:0'] + self.match_score_prob['2:1']
+            self.match_winner_prob['p2'] = self.match_score_prob['0:2'] + self.match_score_prob['1:2']
+
+    def calculate_exp(self, p1, p2, bo=5):
         self.match_exp = PredictionStats(p1.match_baseline, p1.match_impact, p2.match_baseline, p2.match_impact)
 
-        scenarios = ['0:0', '0:1', '1:0', '1:1', '1:2', '2:1', '2:2', '0:2', '2:0']
-        for s in scenarios:
-            p1_baseline = p1.set_baseline.get(s, p1.match_baseline)
-            p1_impact = p1.set_impact.get(s, p1.match_impact)
-            p2_baseline = p2.set_baseline.get(inverse_score(s), p2.match_baseline)
-            p2_impact = p2.set_impact.get(inverse_score(s), p2.match_impact)
-            # solve nan, match baseline and impact
-            p1_baseline = solve_nan(p1_baseline, p1.match_baseline)
-            p1_impact = solve_nan(p1_impact, p1.match_impact)
-            p2_baseline = solve_nan(p2_baseline, p2.match_baseline)
-            p2_impact = solve_nan(p2_impact, p2.match_impact)
+        if bo == 5:
+            scenarios = ['0:0', '0:1', '1:0', '1:1', '1:2', '2:1', '2:2', '0:2', '2:0']
+            for s in scenarios:
+                p1_baseline = p1.set_baseline.get(s, p1.match_baseline)
+                p1_impact = p1.set_impact.get(s, p1.match_impact)
+                p2_baseline = p2.set_baseline.get(inverse_score(s), p2.match_baseline)
+                p2_impact = p2.set_impact.get(inverse_score(s), p2.match_impact)
+                # solve nan, match baseline and impact
+                p1_baseline = solve_nan(p1_baseline, p1.match_baseline)
+                p1_impact = solve_nan(p1_impact, p1.match_impact)
+                p2_baseline = solve_nan(p2_baseline, p2.match_baseline)
+                p2_impact = solve_nan(p2_impact, p2.match_impact)
 
-            set_exp_temp = PredictionStats(p1_baseline, p1_impact, p2_baseline, p2_impact)
-            self.set_exp[s] = set_exp_temp
+                set_exp_temp = PredictionStats(p1_baseline, p1_impact, p2_baseline, p2_impact)
+                self.set_exp[s] = set_exp_temp
+        elif bo == 3:
+            scenarios = ['0:0', '0:1', '1:0', '1:1']
+            for s in scenarios:
+                p1_baseline = p1.set_baseline_3.get(s, p1.match_baseline)
+                p1_impact = p1.set_impact_3.get(s, p1.match_impact)
+                p2_baseline = p2.set_baseline_3.get(inverse_score(s), p2.match_baseline)
+                p2_impact = p2.set_impact_3.get(inverse_score(s), p2.match_impact)
+                # solve nan, match baseline and impact
+                p1_baseline = solve_nan(p1_baseline, p1.match_baseline)
+                p1_impact = solve_nan(p1_impact, p1.match_impact)
+                p2_baseline = solve_nan(p2_baseline, p2.match_baseline)
+                p2_impact = solve_nan(p2_impact, p2.match_impact)
+
+                set_exp_temp = PredictionStats(p1_baseline, p1_impact, p2_baseline, p2_impact)
+                self.set_exp[s] = set_exp_temp
 
         scenarios = [3, 2, 1, 0, -1, -2, -3]
         for s in scenarios:

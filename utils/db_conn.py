@@ -24,40 +24,47 @@ cursor = db.cursor()
 #     return matches
 
 
-def all_match_ids_period(player, start_year, end_year, surface='hard'):
+def all_match_ids_period(player, start_year, end_year, surface='hard', bo=0):
     matches = {}
-    sql = "SELECT match_id FROM matches " \
-          "WHERE player1 = '" + player + "' " \
-          "AND surface ='" + surface + "'" \
-          "AND year BETWEEN " + str(start_year) + " AND " + str(end_year)
-    cursor.execute(sql)
-    data = cursor.fetchall()
-    matches[1] = [row[0] for row in data]
-    sql = "SELECT match_id FROM matches " \
-          "WHERE player2 = '" + player + "' " \
-          "AND surface ='" + surface + "'" \
-          "AND year BETWEEN " + str(start_year) + " AND " + str(end_year)
-    cursor.execute(sql)
-    data = cursor.fetchall()
-    matches[2] = [row[0] for row in data]
+    matches[1] = []
+    matches[2] = []
+    matches[3] = []
+    matches[4] = []
 
-    # db for non-grand slam
-    sql = "SELECT match_id FROM pbp " \
-          "WHERE player1 = '" + player + "' " \
-          "AND surface ='" + surface + "'" \
-          "AND tournament_level != 'grand' " \
-          "AND year BETWEEN " + str(start_year) + " AND " + str(end_year)
-    cursor.execute(sql)
-    data = cursor.fetchall()
-    matches[3] = [row[0] for row in data]
-    sql = "SELECT match_id FROM pbp " \
-          "WHERE player2 = '" + player + "' " \
-          "AND surface ='" + surface + "'" \
-          "AND tournament_level != 'grand' " \
-          "AND year BETWEEN " + str(start_year) + " AND " + str(end_year)
-    cursor.execute(sql)
-    data = cursor.fetchall()
-    matches[4] = [row[0] for row in data]
+    if bo != 3:
+        sql = "SELECT match_id FROM matches " \
+              "WHERE player1 = '" + player + "' " \
+              "AND surface ='" + surface + "'" \
+              "AND year BETWEEN " + str(start_year) + " AND " + str(end_year)
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        matches[1] = [row[0] for row in data]
+        sql = "SELECT match_id FROM matches " \
+              "WHERE player2 = '" + player + "' " \
+              "AND surface ='" + surface + "'" \
+              "AND year BETWEEN " + str(start_year) + " AND " + str(end_year)
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        matches[2] = [row[0] for row in data]
+
+    if bo != 5:
+        # db for non-grand slam
+        sql = "SELECT match_id FROM pbp " \
+              "WHERE player1 = '" + player + "' " \
+              "AND surface ='" + surface + "'" \
+              "AND tournament_level != 'grand' " \
+              "AND year BETWEEN " + str(start_year) + " AND " + str(end_year)
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        matches[3] = [row[0] for row in data]
+        sql = "SELECT match_id FROM pbp " \
+              "WHERE player2 = '" + player + "' " \
+              "AND surface ='" + surface + "'" \
+              "AND tournament_level != 'grand' " \
+              "AND year BETWEEN " + str(start_year) + " AND " + str(end_year)
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        matches[4] = [row[0] for row in data]
     return matches
 
 def match_attributes(match_id):
