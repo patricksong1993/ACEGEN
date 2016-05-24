@@ -51,17 +51,17 @@ def all_match_ids_period(player, start_year, end_year, surface='hard', bo=0):
         # db for non-grand slam
         sql = "SELECT match_id FROM pbp " \
               "WHERE player1 = '" + player + "' " \
-              "AND surface ='" + surface + "'" \
+              "AND surface ='" + surface + "' " \
               "AND tournament_level != 'grand' " \
-              "AND year BETWEEN " + str(start_year) + " AND " + str(end_year)
+              "AND date BETWEEN '%s' AND '%s'" % (start_year, end_year)
         cursor.execute(sql)
         data = cursor.fetchall()
         matches[3] = [row[0] for row in data]
         sql = "SELECT match_id FROM pbp " \
               "WHERE player2 = '" + player + "' " \
-              "AND surface ='" + surface + "'" \
+              "AND surface ='" + surface + "' " \
               "AND tournament_level != 'grand' " \
-              "AND year BETWEEN " + str(start_year) + " AND " + str(end_year)
+              "AND date BETWEEN '%s' AND '%s'" % (start_year, end_year)
         cursor.execute(sql)
         data = cursor.fetchall()
         matches[4] = [row[0] for row in data]
@@ -87,5 +87,8 @@ def match_points(match_id):
     data = cursor.fetchall()
     return data
 
-
-
+def all_matches_year(year1, year2, surface):
+    sql = "SELECT player1, player2, winner, date FROM pbp WHERE year BETWEEN '%s' AND '%s' AND surface = '%s'" %(year1, year2, surface)
+    cursor.execute(sql)
+    data = cursor.fetchall()
+    return data

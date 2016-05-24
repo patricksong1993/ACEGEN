@@ -60,6 +60,9 @@ class Match:
             for score in point_points_won:
                 self.point_pct[score] = PointStats(point_points_won[score])
 
+            tiebreak_points_won = self.tiebreak_pw_pbp()
+            self.tiebreak_pct = PointStats(tiebreak_points_won)
+
 
     def point_builder(self, points_data):
         points = []
@@ -328,6 +331,51 @@ class Match:
             prev_point = point
 
         return game_pcts
+
+    def tiebreak_pw_pbp(self):
+        tiebreak_pcts = [0, 0, 0, 0]
+
+        point_server = 1
+        tie_break = False
+        tie_break_server = 0
+
+        prev_point = 0
+        # assume data point are semi-perfect, no point server is non-zero but point winner is zero
+        for point in self.points:
+            if point == ';':
+                point_server = 3 - point_server
+            elif point == '/':
+                if not tie_break:
+                    if point_server == 1:
+                        tiebreak_pcts[0] += 1
+                        if prev_point == 'S' or prev_point == 'A':
+                            tiebreak_pcts[1] += 1
+                    if point_server == 2:
+                        tiebreak_pcts[2] += 1
+                        if prev_point == 'S' or prev_point == 'A':
+                            tiebreak_pcts[3] += 1
+                    tie_break = True
+                    tie_break_server = 3 - point_server
+                else:
+                    tie_break_server = 3 - tie_break_server
+            elif point == '.':
+                point_server = 3 - point_server
+                tie_break = False
+                tie_break_server = 0
+            else:
+                if tie_break:
+                    if tie_break_server == 1:
+                        tiebreak_pcts[0] += 1
+                        if point == 'S' or point == 'A':
+                            tiebreak_pcts[1] += 1
+                    if tie_break_server == 2:
+                        tiebreak_pcts[2] += 1
+                        if point == 'S' or point == 'A':
+                            tiebreak_pcts[3] += 1
+
+            prev_point = point
+
+        return tiebreak_pcts
 
     def point_pw(self):
         point_pcts = {}

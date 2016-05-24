@@ -1,9 +1,10 @@
-from classes.match import Match
-from classes.player import Player
 import csv
+
 import tabulate
+
+import evaluations.investor as investor
+from classes.player import Player
 from classes.prediction import Prediction
-import models.investor as investor
 
 # m = Match('2016-ausopen-1701',2014,'usopen',1402,'','')
 #

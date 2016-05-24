@@ -1,15 +1,24 @@
 import predictor
 from utils.model_utils import populate_length
 
-class MatchIIDModel():
+class PointIIDModel():
 
     def __init__(self, match_exp, set_exp, game_exp, point_exp, bo=5):
-        self.match_exp = match_exp
+        self.point_exp = point_exp
         self.bo = bo
 
     def match_matrix(self):
-        win_set_p1_sf = predictor.set_only_iid(self.match_exp.p1_pct, self.match_exp.p1_pct_std, self.match_exp.p2_pct, self.match_exp.p2_pct_std)
-        win_set_p2_sf = predictor.set_only_iid(self.match_exp.p2_pct, self.match_exp.p2_pct_std, self.match_exp.p1_pct, self.match_exp.p1_pct_std)
+        p1_point_exp = {}
+        p2_point_exp = {}
+        for point in self.point_exp:
+            p1_point_exp[point] = self.point_exp[point].p1_pct
+            p2_point_exp[point] = self.point_exp[point].p2_pct
+
+        p1_win_game_pct = predictor.point_win_game(p1_point_exp)
+        p2_win_game_pct = predictor.point_win_game(p2_point_exp)
+
+        win_set_p1_sf = predictor.point_win_set(p1_win_game_pct, p2_win_game_pct)
+        win_set_p2_sf = predictor.point_win_set(p2_win_game_pct, p1_win_game_pct)
 
         if self.bo == 5:
             match_matrix = [[0] * 4 for i in range(4)]
@@ -63,7 +72,7 @@ class MatchIIDModel():
 
                     match_matrix[i][j + 1][1] += match_matrix[i][j][0] * win_set_p1_sf[2] + \
                                                  match_matrix[i][j][1] * win_set_p2_sf[1]
-                    populate_length(match_matrix_length[i][j + 1][1], match_matrix_length[i][j][0], win_set_p1_sf[6])
-                    populate_length(match_matrix_length[i][j + 1][1], match_matrix_length[i][j][1], win_set_p2_sf[5])
+        populate_length(match_matrix_length[i][j + 1][1], match_matrix_length[i][j][0], win_set_p1_sf[6])
+        populate_length(match_matrix_length[i][j + 1][1], match_matrix_length[i][j][1], win_set_p2_sf[5])
 
         return [match_matrix, match_matrix_length]

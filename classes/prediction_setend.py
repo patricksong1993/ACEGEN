@@ -8,9 +8,9 @@ from models.point_iid_model import PointIIDModel
 import utils.model_utils as model_utils
 
 
-class Prediction:
+class PredictionSetend:
 
-    def __init__(self, p1_name, p2_name, model, data='', bo=5, ts=False, minM=False):
+    def __init__(self, p1_name, p2_name, model, points_played='', mixture=False, bo=5, ts=False, minM=False):
         self.p1 = player.Player.get_player(p1_name)
         if self.p1.match_impact == 0:
             self.p1.calculate_impact()
@@ -56,41 +56,6 @@ class Prediction:
         self.match_winner_odds = {}
         self.match_score_odds = {}
 
-        if data != '':
-            if self.bo == 5:
-                self.match_score = data[3]
-                if self.match_score[0] > self.match_score[2]:
-                    self.match_winner = 'p1'
-                else:
-                    self.match_winner = 'p2'
-
-                self.match_winner_odds['p1'] = float(data[4])
-                self.match_winner_odds['p2'] = float(data[5])
-
-                self.match_score_odds['3:0'] = float(data[6])
-                self.match_score_odds['3:1'] = float(data[7])
-                self.match_score_odds['3:2'] = float(data[8])
-                self.match_score_odds['0:3'] = float(data[9])
-                self.match_score_odds['1:3'] = float(data[10])
-                self.match_score_odds['2:3'] = float(data[11])
-
-                self.round = int(data[2])
-            elif self.bo == 3:
-                self.match_score = data[3]
-                if self.match_score[0] > self.match_score[2]:
-                    self.match_winner = 'p1'
-                else:
-                    self.match_winner = 'p2'
-
-                self.match_winner_odds['p1'] = float(data[4])
-                self.match_winner_odds['p2'] = float(data[5])
-
-                self.match_score_odds['2:0'] = float(data[6])
-                self.match_score_odds['2:1'] = float(data[7])
-                self.match_score_odds['0:2'] = float(data[8])
-                self.match_score_odds['1:2'] = float(data[9])
-
-                self.round = int(data[2])
 
     def to_list(self):
         all_attr = []
@@ -117,35 +82,9 @@ class Prediction:
 
     def predict_set_score(self):
         match_matrix = self.model.match_matrix()
-
-        # if type(match_matrix is list):
-        #     match_matrix_length = match_matrix[1]
         match_matrix = match_matrix[0]
 
-        # match_length = {}
-        # match_length_dummy = {0:1}
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][0][0])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][0][1])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][1][0])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][1][1])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[0][2][0])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[0][2][1])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[1][2][0])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[1][2][1])
-        # self.match_length = match_length
-
-        if self.bo == 5:
-            self.match_score_prob['3:0'] = np.sum(match_matrix[3][0])
-            self.match_score_prob['3:1'] = np.sum(match_matrix[3][1])
-            self.match_score_prob['3:2'] = np.sum(match_matrix[3][2])
-            self.match_score_prob['0:3'] = np.sum(match_matrix[0][3])
-            self.match_score_prob['1:3'] = np.sum(match_matrix[1][3])
-            self.match_score_prob['2:3'] = np.sum(match_matrix[2][3])
-
-            self.match_winner_prob['p1'] = self.match_score_prob['3:0'] + self.match_score_prob['3:1'] + self.match_score_prob['3:2']
-            self.match_winner_prob['p2'] = self.match_score_prob['0:3'] + self.match_score_prob['1:3'] + self.match_score_prob['2:3']
-
-        elif self.bo == 3:
+        if self.bo == 3:
             self.match_score_prob['2:0'] = np.sum(match_matrix[2][0])
             self.match_score_prob['2:1'] = np.sum(match_matrix[2][1])
             self.match_score_prob['0:2'] = np.sum(match_matrix[0][2])

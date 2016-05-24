@@ -1,19 +1,20 @@
-from classes.match import Match
+import sys
+
 from classes.player import Player
 from classes.prediction import Prediction
-import models.investor as investor
 
+sys.setrecursionlimit(10000)
 # m = Match('2016-ausopen-1701',2014,'usopen',1402,'','')
 #
 # print m
-Player.start_year = 2013
-Player.end_year = 2016
-Player.surface = 'clay'
+Player.start_year = '2014-01-01'
+Player.end_year = '2014-06-30'
+Player.surface = 'hard'
 
+Player('Andy Murray')
 
-prediction = Prediction('Gael Monfils','Rafael Nadal','game_iid_model',bo=3)
+prediction = Prediction('Andy Murray', 'Roger Federer', 'point_iid_model', bo=3)
 prediction.predict_set_score()
-
 
 print prediction.match_score_prob['2:0']
 print prediction.match_score_prob['2:1']
