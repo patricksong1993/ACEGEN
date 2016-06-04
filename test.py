@@ -2,28 +2,144 @@ import sys
 
 from classes.player import Player
 from classes.prediction import Prediction
+import utils.db_conn as db_conn
 
+import numpy as np
 sys.setrecursionlimit(10000)
 # m = Match('2016-ausopen-1701',2014,'usopen',1402,'','')
 #
 # print m
-Player.start_year = '2014-01-01'
-Player.end_year = '2014-06-30'
-Player.surface = 'hard'
+Player.start_year = '2012-01-01'
+Player.end_year = '2015-12-31'
+Player.surface = 'clay'
 
+
+# ps = db_conn.all_players()
+#
+#
+#
+# for p in ps:
+#     Player(p[0])
+#
+# Player.calculate_all_ts()
+#
+# serv = []
+# retn = []
+# for p in Player.cached_players:
+#     serv.append(Player.cached_players[p].match_impact_ts.serv_mean)
+#     retn.append(Player.cached_players[p].match_impact_ts.retn_mean)
+#
+# print serv
+# print retn
+#
+# print np.nanmean(serv)
+# print np.nanmean(retn)
+#
+# print np.nanstd(serv)
+# print np.nanstd(retn)
+#
+# serv = []
+# retn = []
+# for p in Player.cached_players:
+#     if '0:0' in Player.cached_players[p].set_impact_3_ts.keys():
+#         serv.append(Player.cached_players[p].set_impact_3_ts['0:0'].serv_mean)
+#         retn.append(Player.cached_players[p].set_impact_3_ts['0:0'].retn_mean)
+# print '0:0'
+# print serv
+# print retn
+#
+# print np.nanmean(serv)
+# print np.nanmean(retn)
+#
+# print np.nanstd(serv)
+# print np.nanstd(retn)
+#
+# serv = []
+# retn = []
+# for p in Player.cached_players:
+#     if '1:0' in Player.cached_players[p].set_impact_3_ts.keys():
+#         serv.append(Player.cached_players[p].set_impact_3_ts['1:0'].serv_mean)
+#         retn.append(Player.cached_players[p].set_impact_3_ts['1:0'].retn_mean)
+# print '1:0'
+# print serv
+# print retn
+#
+# print np.nanmean(serv)
+# print np.nanmean(retn)
+#
+# print np.nanstd(serv)
+# print np.nanstd(retn)
+#
+# serv = []
+# retn = []
+# for p in Player.cached_players:
+#     if '0:1' in Player.cached_players[p].set_impact_3_ts.keys():
+#         serv.append(Player.cached_players[p].set_impact_3_ts['0:1'].serv_mean)
+#         retn.append(Player.cached_players[p].set_impact_3_ts['0:1'].retn_mean)
+# print '0:1'
+# print serv
+# print retn
+#
+# print np.nanmean(serv)
+# print np.nanmean(retn)
+#
+# print np.nanstd(serv)
+# print np.nanstd(retn)
+#
+# serv = []
+# retn = []
+# for p in Player.cached_players:
+#     if '1:1' in Player.cached_players[p].set_impact_3_ts.keys():
+#         serv.append(Player.cached_players[p].set_impact_3_ts['1:1'].serv_mean)
+#         retn.append(Player.cached_players[p].set_impact_3_ts['1:1'].retn_mean)
+# print '1:1'
+# print serv
+# print retn
+#
+# print np.nanmean(serv)
+# print np.nanmean(retn)
+#
+# print np.nanstd(serv)
+# print np.nanstd(retn)
+#
+
+#
 Player('Andy Murray')
+Player('Novak Djokovic')
 
-prediction = Prediction('Andy Murray', 'Roger Federer', 'point_iid_model', bo=3)
-prediction.predict_set_score()
+Player.calculate_all_ts()
 
-print prediction.match_score_prob['2:0']
-print prediction.match_score_prob['2:1']
-print prediction.match_score_prob['0:2']
-print prediction.match_score_prob['1:2']
+for p in Player.cached_players:
+    if -1 in Player.cached_players[p].game_baseline.keys():
+        if Player.cached_players[p].match_baseline.serv_counts > 10:
+            if Player.cached_players[p].game_baseline[-1].serv_counts > 50:
+                if Player.cached_players[p].match_baseline.serv_mean < Player.cached_players[p].game_baseline[-1].serv_mean:
+                    if Player.cached_players[p].match_baseline.retn_mean < Player.cached_players[p].game_baseline[-1].retn_mean:
+                        if Player.cached_players[p].match_impact.serv_mean > Player.cached_players[p].game_impact[-1].serv_mean:
+                            if Player.cached_players[p].match_impact.serv_mean > Player.cached_players[p].game_impact[-1].serv_mean:
+                                print p
+                                print Player.cached_players[p].match_baseline.serv_counts
+                                print Player.cached_players[p].game_baseline[-1].serv_counts
+                                print Player.cached_players[p].match_baseline.serv_mean - Player.cached_players[p].game_baseline[-1].serv_mean
+                                print Player.cached_players[p].match_baseline.retn_mean - Player.cached_players[p].game_baseline[-1].retn_mean
+                                print Player.cached_players[p].match_impact.serv_mean - Player.cached_players[p].game_impact[-1].serv_mean
+                                print Player.cached_players[p].match_impact.serv_mean - Player.cached_players[p].game_impact[-1].serv_mean
 
-print prediction.match_winner_prob['p1']
-
-print prediction.match_winner_prob['p2']
+#
+#
+#
+#
+# prediction = Prediction('Andy Murray', 'Roger Federer', 'point_iid_model', bo=3)
+# prediction.predict_set_score()
+#
+# print prediction.match_score_prob['2:0']
+# print prediction.match_score_prob['2:1']
+# print prediction.match_score_prob['0:2']
+# print prediction.match_score_prob['1:2']
+#
+# print prediction.match_winner_prob['p1']
+#
+# print prediction.match_winner_prob['p2']
 #
 # matches = []
 #

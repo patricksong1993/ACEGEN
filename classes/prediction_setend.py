@@ -1,16 +1,14 @@
 import classes.player as player
 import math as math
 import numpy as np
-from models.game_iid_model import GameIIDModel
-from models.set_iid_model import SetIIDModel
-from models.match_iid_model import MatchIIDModel
-from models.point_iid_model import PointIIDModel
-import utils.model_utils as model_utils
+from models.set_iid_model_setend import SetIIDModelSetend
+from models.match_iid_model_setend import MatchIIDModelSetend
+from classes.match import Match
 
 
 class PredictionSetend:
 
-    def __init__(self, p1_name, p2_name, model, points_played='', mixture=False, bo=5, ts=False, minM=False):
+    def __init__(self, p1_name, p2_name, model, points_played='', mixture=0, ts=False, setend=1):
         self.p1 = player.Player.get_player(p1_name)
         if self.p1.match_impact == 0:
             self.p1.calculate_impact()
@@ -18,80 +16,91 @@ class PredictionSetend:
         if self.p2.match_impact == 0:
             self.p2.calculate_impact()
 
-
-        self.bo = bo
         self.ts = ts
-        self.minM = minM
 
         if self.ts:
             player.Player.calculate_all_ts()
 
+        self.points_played = points_played.split('.')
 
-        self.minMreached = True
-
-        if self.minM:
-            if self.ts:
-                self.minMreached = self.p1.match_baseline_ts.serv_counts > 4 and self.p2.match_baseline_ts.serv_counts > 4
-            else:
-                self.minMreached = self.p1.match_baseline.serv_counts > 4 and self.p2.match_baseline.serv_counts > 4
         self.match_exp = 0
         self.set_exp = {}
         self.game_exp = {}
         self.point_exp = {}
 
-        self.calculate_exp(self.p1, self.p2, self.bo, self.ts)
+        self.calculate_exp(self.p1, self.p2, 3, self.ts)
+
+
+        if mixture != 0:
+            m = Match(0,0,0,0,0,0,self.points_played[0])
+            p1_ingame_pct = m.match_pct.p1_serv_pct
+            p2_ingame_pct = m.match_pct.p2_serv_pct
+
+            self.match_exp.p1_pct = self.match_exp.p1_pct * (1 - mixture) + p1_ingame_pct * mixture
+            self.match_exp.p2_pct = self.match_exp.p2_pct * (1 - mixture) + p2_ingame_pct * mixture
+
+            self.set_exp['0:0'].p1_pct = self.set_exp['0:0'].p1_pct * (1 - mixture) + p1_ingame_pct * mixture
+            self.set_exp['0:0'].p2_pct = self.set_exp['0:0'].p2_pct * (1 - mixture) + p2_ingame_pct * mixture
+
+            self.set_exp['1:0'].p1_pct = self.set_exp['1:0'].p1_pct * (1 - mixture) + p1_ingame_pct * mixture
+            self.set_exp['1:0'].p2_pct = self.set_exp['1:0'].p2_pct * (1 - mixture) + p2_ingame_pct * mixture
+
+            self.set_exp['1:1'].p1_pct = self.set_exp['1:1'].p1_pct * (1 - mixture) + p1_ingame_pct * mixture
+            self.set_exp['1:1'].p2_pct = self.set_exp['1:1'].p2_pct * (1 - mixture) + p2_ingame_pct * mixture
+
+            self.set_exp['0:1'].p1_pct = self.set_exp['0:1'].p1_pct * (1 - mixture) + p1_ingame_pct * mixture
+            self.set_exp['0:1'].p2_pct = self.set_exp['0:1'].p2_pct * (1 - mixture) + p2_ingame_pct * mixture
+
+        # for set 1 end
+        set1_length = self.points_played[0].split(';').__len__()
+        if set1_length % 2 == 1:
+            next_set_server = 2
+        else:
+            next_set_server = 1
+
+        # tiebreak
+        if self.points_played[0].__contains__('/'):
+            if self.points_played[0].split(';')[12].split('/').__len__() % 2 == 1:
+                if self.points_played[0][self.points_played[0].__len__()-1] == 'S' or self.points_played[0][self.points_played[0].__len__()-1] == 'A':
+                    set_score = '1:0'
+                else:
+                    set_score = '0:1'
+            else:
+                if self.points_played[0][self.points_played[0].__len__() - 1] == 'S' or self.points_played[0][self.points_played[0].__len__() - 1] == 'A':
+                    set_score = '0:1'
+                else:
+                    set_score = '1:0'
+        else:
+            if self.points_played[0].split(';').__len__() % 2 == 1:
+                if self.points_played[0][self.points_played[0].__len__() - 1] == 'S' or self.points_played[0][self.points_played[0].__len__() - 1] == 'A':
+                    set_score = '1:0'
+                else:
+                    set_score = '0:1'
+            else:
+                if self.points_played[0][self.points_played[0].__len__() - 1] == 'S' or self.points_played[0][self.points_played[0].__len__() - 1] == 'A':
+                    set_score = '0:1'
+                else:
+                    set_score = '1:0'
 
         if model == 'set_iid_model':
-            self.model = SetIIDModel(self.match_exp, self.set_exp, self.game_exp, self.point_exp, bo=self.bo)
-        elif model == 'game_iid_model':
-            self.model = GameIIDModel(self.match_exp, self.set_exp, self.game_exp, self.point_exp, bo=self.bo)
+            self.model = SetIIDModelSetend(self.match_exp, self.set_exp, self.game_exp, self.point_exp, set_score, next_set_server, 3)
         elif model == 'match_iid_model':
-            self.model = MatchIIDModel(self.match_exp, self.set_exp, self.game_exp, self.point_exp, bo=self.bo)
-        elif model == 'point_iid_model':
-            self.model = PointIIDModel(self.match_exp, self.set_exp, self.game_exp, self.point_exp, bo=self.bo)
+            self.model = MatchIIDModelSetend(self.match_exp, self.set_exp, self.game_exp, self.point_exp, set_score, next_set_server, 3)
 
         self.match_score_prob = {}
         self.match_winner_prob = {}
-
-        self.match_winner_odds = {}
-        self.match_score_odds = {}
-
-
-    def to_list(self):
-        all_attr = []
-        all_attr.extend([self.p1.name, self.p2.name, self.match_score, self.match_winner])
-        all_attr.append('p1' if self.match_winner_prob['p1']>0.5 else 'p2')
-        all_attr.extend([self.match_winner_prob['p1'], self.match_winner_prob['p2']])
-
-        if self.bo == 5:
-            all_attr.extend([self.match_score_prob['3:0'], self.match_score_prob['3:1'], self.match_score_prob['3:2'],
-                            self.match_score_prob['0:3'], self.match_score_prob['1:3'], self.match_score_prob['2:3']])
-        elif self.bo == 3:
-            all_attr.extend([self.match_score_prob['2:0'], self.match_score_prob['2:1'],
-                             self.match_score_prob['0:2'], self.match_score_prob['1:2']])
-
-        all_attr.extend([self.match_winner_odds['p1'], self.match_winner_odds['p2']])
-        if self.bo == 5:
-            all_attr.extend([self.match_score_odds['3:0'], self.match_score_odds['3:1'], self.match_score_odds['3:2'],
-                            self.match_score_odds['0:3'], self.match_score_odds['1:3'], self.match_score_odds['2:3']])
-        elif self.bo == 3:
-            all_attr.extend([self.match_score_odds['2:0'], self.match_score_odds['2:1'],
-                             self.match_score_odds['0:2'], self.match_score_odds['1:2']])
-
-        return all_attr
 
     def predict_set_score(self):
         match_matrix = self.model.match_matrix()
         match_matrix = match_matrix[0]
 
-        if self.bo == 3:
-            self.match_score_prob['2:0'] = np.sum(match_matrix[2][0])
-            self.match_score_prob['2:1'] = np.sum(match_matrix[2][1])
-            self.match_score_prob['0:2'] = np.sum(match_matrix[0][2])
-            self.match_score_prob['1:2'] = np.sum(match_matrix[1][2])
+        self.match_score_prob['2:0'] = np.sum(match_matrix[2][0])
+        self.match_score_prob['2:1'] = np.sum(match_matrix[2][1])
+        self.match_score_prob['0:2'] = np.sum(match_matrix[0][2])
+        self.match_score_prob['1:2'] = np.sum(match_matrix[1][2])
 
-            self.match_winner_prob['p1'] = self.match_score_prob['2:0'] + self.match_score_prob['2:1']
-            self.match_winner_prob['p2'] = self.match_score_prob['0:2'] + self.match_score_prob['1:2']
+        self.match_winner_prob['p1'] = self.match_score_prob['2:0'] + self.match_score_prob['2:1']
+        self.match_winner_prob['p2'] = self.match_score_prob['0:2'] + self.match_score_prob['1:2']
 
     def calculate_exp(self, p1, p2, bo=5, ts=False):
         self.match_exp = PredictionStats(p1.match_baseline, p1.match_impact, p2.match_baseline, p2.match_impact)

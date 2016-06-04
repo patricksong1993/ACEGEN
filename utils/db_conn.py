@@ -88,7 +88,13 @@ def match_points(match_id):
     return data
 
 def all_matches_year(year1, year2, surface):
-    sql = "SELECT player1, player2, winner, date FROM pbp WHERE year BETWEEN '%s' AND '%s' AND surface = '%s'" %(year1, year2, surface)
+    sql = "SELECT player1, player2, winner, date, score, pbp FROM pbp WHERE year BETWEEN '%s' AND '%s' AND surface = '%s'" %(year1, year2, surface)
+    cursor.execute(sql)
+    data = cursor.fetchall()
+    return data
+
+def all_players():
+    sql = "select DISTINCT * from (select player1 from pbp union select player2 from pbp) as p"
     cursor.execute(sql)
     data = cursor.fetchall()
     return data

@@ -21,19 +21,19 @@ class Prediction:
 
         self.bo = bo
         self.ts = ts
-        self.minM = minM
+        # self.minM = minM
 
         if self.ts:
             player.Player.calculate_all_ts()
 
 
-        self.minMreached = True
-
-        if self.minM:
-            if self.ts:
-                self.minMreached = self.p1.match_baseline_ts.serv_counts > 4 and self.p2.match_baseline_ts.serv_counts > 4
-            else:
-                self.minMreached = self.p1.match_baseline.serv_counts > 4 and self.p2.match_baseline.serv_counts > 4
+        # self.minMreached = True
+        #
+        # if self.minM:
+        #     if self.ts:
+        #         self.minMreached = self.p1.match_baseline_ts.serv_counts > 4 and self.p2.match_baseline_ts.serv_counts > 4
+        #     else:
+        #         self.minMreached = self.p1.match_baseline.serv_counts > 4 and self.p2.match_baseline.serv_counts > 4
         self.match_exp = 0
         self.set_exp = {}
         self.game_exp = {}
@@ -120,19 +120,24 @@ class Prediction:
 
         # if type(match_matrix is list):
         #     match_matrix_length = match_matrix[1]
+        match_matrix_length = match_matrix[1]
         match_matrix = match_matrix[0]
 
-        # match_length = {}
-        # match_length_dummy = {0:1}
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][0][0])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][0][1])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][1][0])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][1][1])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[0][2][0])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[0][2][1])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[1][2][0])
-        # model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[1][2][1])
-        # self.match_length = match_length
+        match_length = {}
+        match_length_dummy = {0:1}
+        model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][0][0])
+        model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][0][1])
+        model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][1][0])
+        model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[2][1][1])
+        model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[0][2][0])
+        model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[0][2][1])
+        model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[1][2][0])
+        model_utils.populate_length(match_length, match_length_dummy, match_matrix_length[1][2][1])
+        self.match_length = match_length
+
+        self.match_length_mean = 0
+        for m in self.match_length:
+            self.match_length_mean += m*self.match_length[m]
 
         if self.bo == 5:
             self.match_score_prob['3:0'] = np.sum(match_matrix[3][0])
@@ -151,8 +156,22 @@ class Prediction:
             self.match_score_prob['0:2'] = np.sum(match_matrix[0][2])
             self.match_score_prob['1:2'] = np.sum(match_matrix[1][2])
 
+            temp_total = self.match_score_prob['2:0']+self.match_score_prob['2:1']+self.match_score_prob['0:2']+self.match_score_prob['1:2']
+            self.match_score_prob['2:0'] = self.match_score_prob['2:0']/temp_total
+            self.match_score_prob['2:1'] = self.match_score_prob['2:1']/temp_total
+            self.match_score_prob['0:2'] = self.match_score_prob['0:2']/temp_total
+            self.match_score_prob['1:2'] = self.match_score_prob['1:2']/temp_total
+
             self.match_winner_prob['p1'] = self.match_score_prob['2:0'] + self.match_score_prob['2:1']
             self.match_winner_prob['p2'] = self.match_score_prob['0:2'] + self.match_score_prob['1:2']
+
+            temp_total = self.match_winner_prob['p1']+self.match_winner_prob['p2']
+            self.match_winner_prob['p1'] = self.match_winner_prob['p1']/temp_total
+            self.match_winner_prob['p2'] = self.match_winner_prob['p2']/temp_total
+
+            self.match_length_set = {}
+            self.match_length_set[2] = self.match_score_prob['2:0']+self.match_score_prob['0:2']
+            self.match_length_set[3] = self.match_score_prob['2:1'] + self.match_score_prob['1:2']
 
     def calculate_exp(self, p1, p2, bo=5, ts=False):
         self.match_exp = PredictionStats(p1.match_baseline, p1.match_impact, p2.match_baseline, p2.match_impact)
